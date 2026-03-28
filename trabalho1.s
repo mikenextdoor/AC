@@ -226,3 +226,4 @@ array_vals3_addr:
 
     array_vals3:
         .space 14
+

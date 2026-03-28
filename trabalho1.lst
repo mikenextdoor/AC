@@ -1,4 +1,4 @@
-P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Documents\Pessoal\ISEL\2º Semestre\AC\trabalho1.lst	Sat Mar 28 00:22:17 2026
+P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Documents\Pessoal\ISEL\2º Semestre\AC\trabalho1.lst	Sat Mar 28 00:24:41 2026
 
 Sections
 Index   Name            Address   Size
@@ -277,4 +277,5 @@ Code listing
  228 0132 00   	        .space 14
  228 .... ..
  228 013F 00
- 228           	
+ 229           	
+ 229           	

@@ -1,0 +1,47 @@
+P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Desktop\ISEL\AC\ProjetoFinal\codigo.lst	Thu May 29 23:04:03 2025
+
+Sections
+Index   Name            Address   Size
+0       .data           0000      001A 26
+
+Symbols
+Name                    Type      Value       Section
+array                   LABEL     0000 0      .data
+IMPORT_ADDRESS          ABSOLUTE  00FF 255    .data
+MASK_2_3                ABSOLUTE  000C 12     .data
+OUTPORT_ADDRESS         ABSOLUTE  00FF 255    .data
+outport_write           LABEL     0004 4      .data
+roll                    LABEL     000C 12     .data
+sides23                 LABEL     0014 20     .data
+
+Code listing
+   1           	
+   2          	.equ	OUTPORT_ADDRESS, 0x00FF       ; Endereco do porto de saida
+   3          	.equ	IMPORT_ADDRESS, 0x00FF       ; Endereco do porto de saida
+   4          	.equ	MASK_2_3, 0x0C       ; Endereco do porto de saida
+   5           	
+   6           	
+   7           	.data
+   8           	array:
+   9          	    .byte 4, 6, 8 ,12
+   9 0000 04 06 08 0C
+  10           	
+  11           	outport_write:
+  12 0004 F1 6F		mov	r1, #OUTPORT_ADDRESS & 0xFF
+  13 0006 01 70		movt	r1, #(OUTPORT_ADDRESS >> 8) & 0xFF
+  14 0008 10 28		strb	r0, [r1, #0]
+  15 000A 0F B7		mov	pc, lr
+  16           	
+  17           	roll:
+  18 000C 0E 24	    push lr
+  19 000E 00 60	    mov r0, #0
+  20           	
+  21 0010 0E 04	    pop lr
+  22 0012 0F B7	    mov pc, lr
+  23           	
+  24           	sides23:
+  25 0014 0E 24	    push lr
+  26           	
+  27 0016 0E 04	    pop lr
+  28 0018 0F B7	    mov pc, lr
+  28           	

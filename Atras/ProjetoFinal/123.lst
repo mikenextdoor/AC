@@ -1,0 +1,218 @@
+P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Desktop\ISEL\AC\ProjetoFinal\123.lst	Thu Jun 05 11:21:11 2025
+
+Sections
+Index   Name            Address   Size
+0       .text           0000      00FE 254
+1       .data           00FE      000E 14
+2       .stack          010C      03E8 1000
+
+Symbols
+Name                    Type      Value       Section
+add_condition           LABEL     0040 64     .text
+check_if                LABEL     004C 76     .text
+for_end                 LABEL     005C 92     .text
+for_loop                LABEL     002E 46     .text
+if_condition            LABEL     00A8 168    .text
+if_end                  LABEL     0050 80     .text
+line#4                  LABEL     0004 4      .text
+main                    LABEL     00BC 188    .text
+main_end                LABEL     00EC 236    .text
+main_loop               LABEL     00D8 216    .text
+rand                    LABEL     0078 120    .text
+results                 LABEL     0102 258    .data
+results_addr            LABEL     00FC 252    .text
+seed                    LABEL     00FE 254    .data
+seed_addr               LABEL     00BA 186    .text
+set_error               LABEL     00EA 234    .text
+srand                   LABEL     0070 112    .text
+stack_top               LABEL     04F4 1268   .stack
+stack_top_addr          LABEL     0006 6      .text
+sub_condition           LABEL     0046 70     .text
+umull32                 LABEL     0008 8      .text
+
+Code listing
+   1           	.text
+   2 0000 2D 0C	        ldr     sp,stack_top_addr
+   3 0002 5C 5C	        bl      main
+   4 0004 FF 5B	        b       .
+   5           	stack_top_addr:
+   6 0006 F4 04	        .word   stack_top
+   7           	
+   8           	umull32: 
+   9 0008 0E 24	        push    lr                      
+  10 000A 04 24	        push    r4
+  11 000C 05 24	        push    r5
+  12 000E 06 24	        push    r6
+  13 0010 07 24	        push    r7
+  14 0012 08 24	        push    r8
+  15 0014 09 24	        push    r9
+  16 0016 0A 24	        push    r10
+  17 0018 0B 24	        push    r11
+  18 001A 08 B0	        mov     r8, r0              ; M_ext (parte baixa)
+  19 001C 89 B0	        mov     r9, r1              ; M_ext (parte alta)
+  20 001E 00 B1	        mov     r0, r2              ; p (parte baixa)
+  21 0020 81 B1	        mov     r1, r3              ; p (parte alta)
+  22 0022 07 60	        mov     r7, #0              ; p_1 = 0 
+  23 0024 0A 60	        mov     r10, #0             ; #0
+  24 0026 1B 60	        mov     r11, #1             ; #1
+  25 0028 05 60	        mov     r5, #0              ; i = 0
+  26 002A 02 60	        mov     r2, #0              ; reset parte baixa
+  27 002C 03 60	        mov     r3, #0              ; reset parte alta
+  28           	for_loop:
+  29 002E 06 62	        mov     r6, #32             ; #32
+  30 0030 50 BB	        cmp     r5, r6              ; i < 32
+  31 0032 14 48	        bhs     for_end
+  32 0034 D5 A0	        add     r5, r5, #1          ; i++
+  33 0036 84 C5	        and     r4, r0, r11         ; p & 0x1
+  34 0038 40 BD	        cmp     r4, r10             ; p & 0x1 == 0
+  35 003A 08 44	        bne     check_if
+  36 003C F0 BD	        cmp     r7, r11             ; p_1 == 1
+  37 003E 08 44	        bne     if_end
+  38           	
+  39           	add_condition:
+  40 0040 22 84	        add     r2, r2, r8          ; p += M_ext(parte baixa)
+  41 0042 B3 94	        adc     r3, r3, r9          ; p += M_ext(parte alta) + carry
+  42 0044 05 58	        b       if_end
+  43           	
+  44           	sub_condition:
+  45 0046 22 8C	        sub     r2, r2, r8          ; p -= M_ext(parte baixa)
+  46 0048 B3 9C	        sbc     r3, r3, r9          ; p -= M_ext(parte alta) + carry
+  47 004A 02 58	        b       if_end
+  48           	
+  49           	check_if:
+  50 004C 70 BD	        cmp     r7, r10             ; p_1 == 0
+  51 004E FB 43	        beq     sub_condition
+  52           	
+  53           	if_end:
+  54 0050 87 C5	        and     r7, r0, r11         ; p_1 = p & 0x1
+  55 0052 B3 F0	        asr     r3, r3, #1          ; p >>= 1
+  56 0054 22 D8	        rrx     r2, r2
+  57 0056 11 D8	        rrx     r1, r1
+  58 0058 00 D8	        rrx     r0, r0
+  59 005A E9 5B	        b       for_loop
+  60           	
+  61           	for_end:
+  62 005C 0B 04	        pop     r11
+  63 005E 0A 04	        pop     r10
+  64 0060 09 04	        pop     r9
+  65 0062 08 04	        pop     r8
+  66 0064 07 04	        pop     r7
+  67 0066 06 04	        pop     r6
+  68 0068 05 04	        pop     r5
+  69 006A 04 04	        pop     r4
+  70 006C 0E 04	        pop     lr
+  71 006E 0F B7	        mov     pc, lr
+  72           	
+  73           	srand:
+  74 0070 43 0E	        ldr     r3, seed_addr
+  75 0072 30 20	        str     r0, [r3]            ; seed[0]
+  76 0074 B1 20	        str     r1, [r3, #2]        ; seed[1]
+  77 0076 0F B7	        mov     pc, lr
+  78           	        
+  79           	rand: 
+  80 0078 0E 24	        push    lr
+  81 007A 04 24	        push    r4
+  82 007C 05 24	        push    r5 
+  83 007E 06 24	        push    r6
+  84 0080 C3 0D	        ldr     r3, seed_addr
+  85 0082 30 00	        ldr     r0, [r3]            ; seed[0]
+  86 0084 B1 00	        ldr     r1, [r3, #2]        ; seed[1]
+  87 0086 D2 6F	        mov     r2, #0xFD           ; 214013: r3 = #0x3; r2 = #0x43; r2 = #0xFD
+  88 0088 32 74	        movt    r2, #0x43
+  89 008A 33 60	        mov     r3, #0x3
+  90 008C BD 5F	        bl      umull32
+  91 008E 33 6C	        mov     r3, #0xC3           ; 2531011: r3 = #0x26; r2 = #0x9E; r2 = #0xC3
+  92 0090 E3 79	        movt    r3, #0x9E
+  93 0092 64 62	        mov     r4, #0x26
+  94 0094 80 81	        add     r0, r0, r3          ; umull32( seed, 214013 ) + 2531011 (parte baixa)
+  95 0096 11 92	        adc     r1, r1, r4          ; umull32( seed, 214013 ) + 2531011 (parte alta)
+  96 0098 F5 6F	        mov     r5, #0xFF           ; RAND_MAx
+  97 009A F5 7F	        movt    r5, #0xFF           ; RAND_MAx
+  98 009C 80 BA	        cmp     r0, r5
+  99 009E 04 44	        bne     if_condition
+ 100 00A0 90 BA	        cmp     r1, r5
+ 101 00A2 02 44	        bne     if_condition
+ 102 00A4 00 60	        mov     r0, #0              ; reset
+ 103 00A6 01 60	        mov     r1, #0              ; reset
+ 104           	if_condition:
+ 105 00A8 83 0C	        ldr     r3, seed_addr
+ 106 00AA 30 20	        str     r0, [r3]            ; seed[0]
+ 107 00AC B1 20	        str     r1, [r3, #2]        ; seed[1]
+ 108 00AE 80 B0	        mov     r0, r1
+ 109 00B0 06 04	        pop     r6
+ 110 00B2 05 04	        pop     r5
+ 111 00B4 04 04	        pop     r4
+ 112 00B6 0E 04	        pop     lr
+ 113 00B8 0F B7	        mov     pc, lr
+ 114           	
+ 115           	seed_addr:
+ 116 00BA FE 00	        .word   seed
+ 117           	
+ 118           	main:
+ 119 00BC 0E 24	        push    lr
+ 120 00BE 04 24	        push    r4
+ 121 00C0 05 24	        push    r5
+ 122 00C2 06 24	        push    r6
+ 123 00C4 07 24	        push    r7
+ 124 00C6 08 24	        push    r8
+ 125           	        
+ 126           	        ;mov     r0, #6
+ 127           	        ;mov     r1, #0
+ 128           	        ;mov     r2, #4
+ 129           	        ;mov     r3, #0
+ 130           	        ;bl      umull32
+ 131           	        
+ 132 00C8 F0 62	        mov     r0, #0x2F
+ 133 00CA 50 71	        movt    r0, #0x15
+ 134 00CC 01 60	        mov     r1, #0
+ 135 00CE D0 5F	        bl      srand               ; srand(5423)
+ 136           	        
+ 137 00D0 54 0D	        ldr     r4, results_addr
+ 138 00D2 05 60	        mov     r5, #0              ; i = 0
+ 139 00D4 56 60	        mov     r6, #5              ; N = 5
+ 140 00D6 07 60	        mov     r7, #0              ; error = 0
+ 141           	main_loop:
+ 142 00D8 50 BB	        cmp     r5, r6              ; i < N
+ 143 00DA 08 48	        bhs     main_end
+ 144           	        
+ 145 00DC CD 5F	        bl      rand                ; rand_number = rand()
+ 146 00DE D8 82	        add     r8, r5, r5          ; calcula offset (i*2)
+ 147 00E0 43 14	        ldr     r3, [r4, r8]        ; results[i]
+ 148 00E2 80 B9	        cmp     r0, r3              ; cmp com valores do result
+ 149 00E4 02 44	        bne     set_error
+ 150           	        
+ 151 00E6 D5 A0	        add     r5, r5, #1          ; i++
+ 152 00E8 F7 5B	        b       main_loop
+ 153           	
+ 154           	set_error:
+ 155 00EA 17 60	        mov     r7, #1              ; error = 1
+ 156           	
+ 157           	main_end:
+ 158 00EC 80 B3	        mov     r0, r7              ; error (0 ou 1)
+ 159 00EE 08 04	        pop     r8
+ 160 00F0 07 04	        pop     r7
+ 161 00F2 06 04	        pop     r6
+ 162 00F4 05 04	        pop     r5
+ 163 00F6 04 04	        pop     r4
+ 164 00F8 0E 04	        pop     lr
+ 165 00FA 0F B7	        mov     pc, lr
+ 166           	
+ 167           	results_addr:
+ 168 00FC 02 01	        .word   results
+ 169           	
+ 170           	.data
+ 171           	seed:
+ 172          	        .word   1, 0
+ 172 00FE 01 00 00 00
+ 173           	
+ 174           	results: 
+ 175          	        .word   17747, 2055, 3664, 15611, 9816
+ 175 0102 53 45 07 08 50 0E FB 3C 58 26
+ 176           	
+ 177           	.stack
+ 178 010C 00   	        .space  1000
+ 178 .... ..
+ 178 04F3 00
+ 179           	
+ 180           	stack_top:
+ 180           	

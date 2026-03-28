@@ -1,0 +1,450 @@
+P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Desktop\ISEL\AC\ProjetoFinal\vasco.lst	Fri Jun 06 19:40:24 2025
+
+Sections
+Index   Name            Address   Size
+0       .text           0000      0206 518
+1       .data           0206      0015 21
+2       .stack          021C      0040 64
+
+Symbols
+Name                    Type      Value       Section
+animacao                LABEL     0178 376    .text
+codigos_seg7_addr       LABEL     0192 402    .text
+delay                   LABEL     0132 306    .text
+delay_10s               LABEL     01DE 478    .text
+delay_10s_loop          LABEL     01E6 486    .text
+delay_1s                LABEL     0146 326    .text
+delay_1s_loop           LABEL     014E 334    .text
+delay_loop              LABEL     0138 312    .text
+display_codes           LABEL     020A 522    .data
+display_codes_addr      LABEL     01DC 476    .text
+display_numero_aleatorio LABEL     01CA 458    .text
+div_if_end              LABEL     01BC 444    .text
+div_while               LABEL     01AE 430    .text
+divide                  LABEL     01A2 418    .text
+efeito                  LABEL     0168 360    .text
+efeito_lancamento       LABEL     0160 352    .text
+espera_descida          LABEL     007E 126    .text
+espera_subida           LABEL     0074 116    .text
+fim_delay               LABEL     0142 322    .text
+for                     LABEL     017E 382    .text
+for_end                 LABEL     018E 398    .text
+gerar_numero_aleatorio  LABEL     0194 404    .text
+INPORT_ADDRESS          ABSOLUTE  0186 390    .data
+inport_read             LABEL     01F6 502    .text
+isr                     LABEL     0038 56     .text
+lados_dado              LABEL     0056 86     .text
+ler_roll                LABEL     006E 110    .text
+line#8                  LABEL     0008 8      .text
+main                    LABEL     000C 12     .text
+main_loop               LABEL     002A 42     .text
+nCS_EN1                 ABSOLUTE  0146 326    .data
+nCs_ExT1                ABSOLUTE  0146 326    .data
+OUTPORT_ADDRESS         ABSOLUTE  01C6 454    .data
+outport_write           LABEL     01FE 510    .text
+program                 LABEL     0004 4      .text
+rand                    LABEL     009E 158    .text
+RAND_MAX_H              ABSOLUTE  0205 517    .data
+RAND_MAX_L              ABSOLUTE  0205 517    .data
+rand_save_seed          LABEL     00D0 208    .text
+seed                    LABEL     0216 534    .data
+seed_addr               LABEL     00DC 220    .text
+seed_addr_rand          LABEL     00DA 218    .text
+seed_addr_srand         LABEL     009C 156    .text
+sides_table             LABEL     0206 518    .data
+sides_table_addr        LABEL     006C 108    .text
+srand                   LABEL     0094 148    .text
+STACK_SIZE              ABSOLUTE  0246 582    .data
+stack_top               LABEL     025C 604    .stack
+stack_top_addr          LABEL     000A 10     .text
+sum                     LABEL     021A 538    .data
+sum_addr                LABEL     0054 84     .text
+umull32                 LABEL     00DE 222    .text
+umull32_else            LABEL     0108 264    .text
+umull32_loop            LABEL     00F0 240    .text
+umull32_loop_end        LABEL     0112 274    .text
+umull32_ret             LABEL     0122 290    .text
+
+Code listing
+   1           	.text
+   2 0000 01 58	b        program
+   3 0002 1A 58	b       isr
+   4           	
+   5           	program:
+   6 0004 2D 0C	    ldr    sp, stack_top_addr
+   7 0006 02 58	    b    main
+   8 0008 FF 5B	    b   .
+   9           	
+  10           	    stack_top_addr:
+  11 000A 5C 02	        .word    stack_top
+  12           		
+  13           	
+  14           	 main:         ;permite interrupeçoes e ativa o FED
+  15 000C 0E 24	        push lr
+  16 000E 10 6F	        mov r0, #0xF1
+  17 0010 01 60	        mov r1, #0x00
+  18 0012 40 5C	        bl  srand 
+  19 0014 60 B0	        mrs r0, cpsr 
+  20 0016 01 61	        mov r1, #(1 << 4)
+  21 0018 80 C8	        orr r0, r0, r1
+  22 001A 40 B0	        msr cpsr, r0
+  23 001C 01 64	        mov r1, #nCs_ExT1 & 0xFF
+  24 001E F1 7F	        movt r1, #(nCs_ExT1 >> 8) & 0xFF
+  25 0020 11 28	        strb r1, [r1,#0]
+  26 0022 E9 5C	        bl   inport_read
+  27 0024 13 60	        mov r3, #1
+  28 0026 80 C1	        and r0, r0, r3
+  29 0028 05 B0	        mov  r5, r0 ; previous
+  30           	
+  31           	main_loop:
+  32 002A 21 5C		bl ler_roll
+  33 002C 14 5C	    bl lados_dado       ; lê lados do dado para r0
+  34 002E 01 B0		mov r1, r0
+  35 0030 97 5C		bl efeito_lancamento
+  36 0032 CB 5C	    bl display_numero_aleatorio
+  37 0034 D4 5C	    bl delay_10s
+  38 0036 F9 5B	    b main_loop         ; repete para sempre
+  39           	
+  40           	isr:
+  41 0038 00 24	    push r0
+  42 003A 01 24	    push r1
+  43 003C 02 24	    push r2
+  44           	
+  45 003E 00 64	    mov  r0, #nCS_EN1 & 0xFF
+  46 0040 F0 7F	    movt r0, #(nCS_EN1 >> 8) & 0xFF
+  47 0042 02 28	    strb r2, [r0, #0]
+  48 0044 70 0C	    ldr r0, sum_addr
+  49 0046 01 08	    ldrb r1, [r0]
+  50 0048 91 A0	    add r1, r1, #1
+  51 004A 01 28	    strb r1, [r0]
+  52           	
+  53 004C 02 04	    pop r2
+  54 004E 01 04	    pop r1
+  55 0050 00 04	    pop r0
+  56 0052 20 B0	    movs pc, lr
+  57           	sum_addr:
+  58 0054 1A 02	    .word sum
+  59           	lados_dado:
+  60 0056 0E 24		push lr
+  61 0058 04 24		push r4
+  62 005A CD 5C		bl inport_read         ; r0 ← estado do SW1
+  63 005C C4 60		mov r4, #0x0C
+  64 005E 00 C2		and	r0, r0, r4
+  65 0060 00 E9		lsr	r0, r0, #2          ; r0 ← índice entre 0 e 3
+  66 0062 41 0C		ldr	r1, sides_table_addr
+  67 0064 10 18		ldrb r0, [r1, r0]        ; r0 ← nº de lados
+  68 0066 04 04		pop r4
+  69 0068 0E 04		pop lr 
+  70 006A 0F B7		mov	pc, lr
+  71           	
+  72           	    sides_table_addr:
+  73 006C 06 02	        .word sides_table
+  74           	
+  75           	ler_roll:
+  76 006E 04 24	    push r4
+  77 0070 05 24	    push r5
+  78 0072 0E 24	    push lr
+  79           	
+  80           	    espera_subida:
+  81 0074 C0 5C	        bl inport_read
+  82 0076 14 60	        mov r4, #1
+  83 0078 05 C2	        and r5, r0, r4       
+  84 007A 50 BA	        cmp r5, r4
+  85 007C FB 47	        bne espera_subida    ; ve se sobe
+  86           	
+  87           	    espera_descida:
+  88 007E BB 5C	        bl inport_read
+  89 0080 14 60	        mov r4, #1
+  90 0082 05 C2	        and r5, r0, r4
+  91 0084 04 60	        mov r4, #0
+  92 0086 50 BA	        cmp r5, r4
+  93 0088 FA 47	        bne espera_descida   ; ve se desce
+  94 008A 10 60	        mov r0, #1
+  95 008C 0E 04	        pop lr
+  96 008E 05 04	        pop r5
+  97 0090 04 04	        pop r4
+  98 0092 0F B7	        mov pc, lr
+  99           	
+ 100           	srand:
+ 101 0094 32 0C		ldr	r2, seed_addr_srand
+ 102 0096 20 20		str	r0, [r2, #0]
+ 103 0098 A1 20		str	r1, [r2, #2]
+ 104 009A 0F B7		mov	pc, lr
+ 105           	
+ 106           	seed_addr_srand:
+ 107 009C 16 02		.word	seed
+ 108           	
+ 109           	rand:
+ 110 009E 0E 24		push	lr
+ 111           		; Obter o valor atual de seed
+ 112 00A0 C2 0D		ldr	r2, seed_addr_rand
+ 113 00A2 20 00		ldr	r0, [r2, #0]
+ 114 00A4 A1 00		ldr	r1, [r2, #2]
+ 115           		; Calcular a multiplicacao a 32 bits
+ 116 00A6 D2 6F		mov	r2, #( 0x43FD >> 0 ) & 0xFF	; Carregar o valor 214013
+ 117 00A8 32 74		movt	r2, #( 0x43FD >> 8 ) & 0xFF
+ 118 00AA 33 60		mov	r3, #( 0x0003 >> 0 ) & 0xFF
+ 119 00AC 03 70		movt	r3, #( 0x0003 >> 8 ) & 0xFF
+ 120 00AE 17 5C		bl	umull32
+ 121           		; Calcular a adicao a 32 bits
+ 122 00B0 32 6C		mov	r2, #( 0x9EC3 >> 0 ) & 0xFF	; Carregar o valor 2531011
+ 123 00B2 E2 79		movt	r2, #( 0x9EC3 >> 8 ) & 0xFF
+ 124 00B4 63 62		mov	r3, #( 0x0026 >> 0 ) & 0xFF
+ 125 00B6 03 70		movt	r3, #( 0x0026 >> 8 ) & 0xFF
+ 126 00B8 00 81		add	r0, r0, r2
+ 127 00BA 91 91		adc	r1, r1, r3
+ 128 00BC F2 6F		mov	r2, #( RAND_MAX_L >> 0 ) & 0xFF
+ 129 00BE F2 7F		movt	r2, #( RAND_MAX_L >> 8 ) & 0xFF
+ 130 00C0 00 B9		cmp r0, r2
+ 131 00C2 06 44		bne rand_save_seed
+ 132 00C4 F3 6F		mov	r3, #( RAND_MAX_H >> 0 ) & 0xFF
+ 133 00C6 F3 7F		movt	r3, #( RAND_MAX_H >> 8 ) & 0xFF
+ 134 00C8 90 B9		cmp r1, r3
+ 135 00CA 02 44		bne rand_save_seed
+ 136 00CC 00 60		mov r0, #0  	; Atribuir a seed o valor 0
+ 137 00CE 01 60		mov r1, #0
+ 138           	
+ 139           	rand_save_seed:
+ 140           		; Atualizar o valor de seed
+ 141 00D0 42 0C		ldr	r2, seed_addr_rand
+ 142 00D2 20 20		str	r0, [r2, #0]
+ 143 00D4 A1 20		str	r1, [r2, #2]
+ 144 00D6 80 B0		mov	r0, r1	; Preparar o valor a devolver (16 MSb do valor)
+ 145 00D8 0F 04		pop	pc
+ 146           	
+ 147           	seed_addr_rand:
+ 148 00DA 16 02		.word	seed
+ 149           	
+ 150           	seed_addr:
+ 151 00DC 16 02	    .word seed
+ 152           	umull32:
+ 153           		; Prologo
+ 154 00DE 08 24		push	r8
+ 155 00E0 07 24		push	r7
+ 156 00E2 06 24		push	r6
+ 157 00E4 05 24		push	r5
+ 158 00E6 04 24		push	r4
+ 159           	
+ 160           		; Iniciar p fazendo a extensao de sinal aos 16 MSb
+ 161 00E8 B4 F7		asr	r4, r3, #15
+ 162 00EA 05 B2		mov	r5, r4
+ 163           		; Inicia p_1
+ 164 00EC 06 60		mov	r6, #0
+ 165           		; Implementacao do ciclo for
+ 166 00EE 07 60		mov	r7, #0	; Inicia i
+ 167           	umull32_loop:
+ 168 00F0 08 62		mov	r8, #32	; Avaliar o limite maximo de i
+ 169 00F2 70 BC		cmp	r7, r8
+ 170 00F4 16 48		bhs	umull32_ret
+ 171           		; Implementacao do if
+ 172 00F6 18 60		mov	r8, #1
+ 173 00F8 28 C4		and	r8, r2, r8
+ 174 00FA 06 44		bzc	umull32_else
+ 175 00FC 18 60		mov	r8, #1
+ 176 00FE 60 BC		cmp	r6, r8
+ 177 0100 08 44		bne	umull32_loop_end
+ 178 0102 44 80		add	r4, r4, r0	; Atualizar o valor de p
+ 179 0104 D5 90		adc	r5, r5, r1
+ 180 0106 05 58		b	umull32_loop_end
+ 181           	umull32_else:
+ 182           		; Implementacao otimizada do else
+ 183 0108 08 60		mov	r8, #0
+ 184 010A 60 BC		cmp	r6, r8
+ 185 010C 02 44		bne	umull32_loop_end
+ 186 010E 44 88		sub	r4, r4, r0	; Atualizar o valor de p
+ 187 0110 D5 98		sbc	r5, r5, r1
+ 188           	umull32_loop_end:
+ 189 0112 18 60		mov	r8, #1	; Definir o novo valor de p_1
+ 190 0114 26 C4		and	r6, r2, r8
+ 191 0116 D5 F0		asr	r5, r5, #1
+ 192 0118 44 D8		rrx	r4, r4
+ 193 011A 33 D8		rrx	r3, r3
+ 194 011C 22 D8		rrx	r2, r2
+ 195 011E F7 A0		add	r7, r7, #1	; Incrementar i
+ 196 0120 E7 5B		b	umull32_loop
+ 197           	
+ 198           	umull32_ret:
+ 199           		; Epilogo
+ 200 0122 00 B1		mov	r0, r2	; Preparar o valor a devolver
+ 201 0124 81 B1		mov	r1, r3
+ 202           	
+ 203 0126 04 04		pop	r4
+ 204 0128 05 04		pop	r5
+ 205 012A 06 04		pop	r6
+ 206 012C 07 04		pop	r7
+ 207 012E 08 04		pop	r8
+ 208 0130 0F B7		mov	pc, lr
+ 209           	
+ 210           	delay:
+ 211 0132 07 24	    push r7                 ; guardar r7 uma vez só
+ 212 0134 81 6E	    MOV R1, #0xE8
+ 213 0136 31 70	    MOVt R1, #0x03
+ 214           	    delay_loop:
+ 215 0138 07 60	        mov r7, #0
+ 216 013A 90 BB	        cmp r1, r7
+ 217 013C 02 40	        beq fim_delay
+ 218 013E 91 A8	        sub r1, r1, #1
+ 219 0140 FB 5B	        b delay_loop
+ 220           	
+ 221           	    fim_delay:
+ 222 0142 07 04	     pop r7                  ; restaurar r7
+ 223 0144 0F B7	     mov pc, lr
+ 224           	
+ 225           	delay_1s:
+ 226 0146 06 24	    push r6 
+ 227 0148 07 24	    push r7
+ 228 014A 0E 24	    push lr
+ 229           	
+ 230 014C 16 60	    mov r6, #1        ; Repetir 10 vezes o delay_curto
+ 231           	    delay_1s_loop:
+ 232 014E F1 5F	        bl delay
+ 233 0150 E6 A8	        sub r6, r6, #1
+ 234 0152 07 60	        mov r7, #0
+ 235 0154 E0 BB	        cmp r6, r7
+ 236 0156 FB 47	        bne delay_1s_loop
+ 237 0158 0E 04	        pop lr
+ 238 015A 07 04	        pop r7
+ 239 015C 06 04	        pop r6
+ 240 015E 0F B7	        mov pc, lr
+ 241           	
+ 242           	efeito_lancamento:
+ 243 0160 0E 24	    push lr
+ 244 0162 06 24	    push r6
+ 245 0164 07 24	    push r7
+ 246 0166 87 B0	    mov r7, r1
+ 247           	    efeito:
+ 248 0168 81 B3	        mov r1, r7
+ 249 016A 06 5C	        bl animacao
+ 250 016C 13 5C	        bl gerar_numero_aleatorio
+ 251 016E 00 B0	        mov r0, r0 
+ 252 0170 07 04	        pop r7
+ 253 0172 06 04	        pop r6
+ 254 0174 0E 04	        pop lr
+ 255 0176 0F B7	        mov pc, lr
+ 256           	
+ 257           	animacao:
+ 258 0178 0E 24	    push lr
+ 259 017A B2 60	    mov     r2, #11        ; contador decrescente
+ 260 017C 03 60	    mov     r3, #0        ; limite inferior (0)
+ 261           	for:
+ 262 017E A2 A8	    sub     r2, r2, #1
+ 263 0180 81 0C	    ldr     r1, codigos_seg7_addr
+ 264 0182 10 19	    ldrb    r0, [r1,r2]
+ 265 0184 3C 5C	    bl      outport_write
+ 266 0186 DF 5F	    bl      delay_1s      ; <- adicionado para pausa de 1 segundo entre passos
+ 267 0188 A0 B9	    cmp     r2, r3
+ 268 018A 01 40	    beq     for_end
+ 269 018C F8 5B	    b       for
+ 270           	for_end:
+ 271 018E 0E 04	    pop     lr
+ 272 0190 0F B7	    mov     pc, lr
+ 273           	
+ 274           	
+ 275           	    codigos_seg7_addr:
+ 276 0192 0A 02	        .word display_codes
+ 277           	
+ 278           	gerar_numero_aleatorio:
+ 279 0194 0E 24	        push    lr
+ 280 0196 83 5F	        bl      rand
+ 281 0198 81 B3	        mov     r1, r7
+ 282 019A 03 5C	        bl      divide
+ 283 019C 80 A0	        add     r0, r0, #1
+ 284 019E 0E 04	        pop     lr
+ 285 01A0 0F B7	        mov     pc, lr
+ 286           	
+ 287           	divide:
+ 288 01A2 0E 24	        push lr
+ 289 01A4 04 24	        push    r4
+ 290 01A6 03 24	        push    r3
+ 291 01A8 03 60	        mov    r3, #0        ; rest = 0;
+ 292 01AA 04 60	        mov    r4, #0        ; quocient = 0;
+ 293 01AC 02 61	        mov    r2, #16        ; uint16_t i = 16;
+ 294           	    div_while:            ; uint16 dividend_msb = dividend >> 15;
+ 295 01AE 80 E0	        lsl    r0, r0, #1    ; dividend <<= 1;
+ 296 01B0 B3 91	        adc    r3, r3, r3    ; rest <<= 1; rest += dividend_bit;
+ 297 01B2 C4 E0	        lsl    r4, r4, #1    ; quotient <<= 1;
+ 298 01B4 B0 B8	        cmp    r3, r1        ; if (rest >= divisor) {
+ 299 01B6 02 4C	        blo    div_if_end
+ 300 01B8 B3 88	        sub    r3, r3, r1    ; rest -= divisor;
+ 301 01BA C4 A0	        add    r4, r4, #1    ; quotient += 1;
+ 302           	    div_if_end:
+ 303 01BC A2 A8	        sub    r2, r2, #1    ; } while (--i > 0);
+ 304 01BE F7 47	        bne    div_while
+ 305 01C0 80 B1	        mov    r0, r3        ; return rest;
+ 306 01C2 03 04	        pop r3
+ 307 01C4 04 04	        pop    r4
+ 308 01C6 0E 04	        pop lr
+ 309 01C8 0F B7	        mov    pc, lr
+ 310           	
+ 311           	display_numero_aleatorio:
+ 312 01CA 0E 24	    push lr
+ 313 01CC 71 0C	    ldr r1, display_codes_addr
+ 314 01CE 80 A8	    sub r0, r0, #1              ; transformar [1, D] → [0, D-1]
+ 315 01D0 10 18	    ldrb r0, [r1, r0]           ; buscar código correspondente
+ 316 01D2 02 68	    mov r2, #0x80               ; ativar mostrador o bit 7
+ 317 01D4 00 C9	    orr r0, r0, r2              ; combinar com o código
+ 318 01D6 13 5C	    bl outport_write
+ 319 01D8 0E 04	    pop lr
+ 320 01DA 0F B7	    mov pc, lr
+ 321           	
+ 322           	    display_codes_addr:
+ 323 01DC 0A 02	        .word display_codes
+ 324           	
+ 325           	delay_10s:
+ 326 01DE 06 24	    push r6
+ 327 01E0 07 24	    push r7
+ 328 01E2 0E 24	    push lr
+ 329           	
+ 330 01E4 E6 61	    mov r6, #30        ; Repetir 10 vezes o delay
+ 331           	    delay_10s_loop:
+ 332 01E6 A5 5F	        bl delay
+ 333 01E8 E6 A8	        sub r6, r6, #1
+ 334 01EA 07 60	        mov r7, #0
+ 335 01EC E0 BB	        cmp r6, r7
+ 336 01EE FB 47	        bne delay_10s_loop
+ 337           	
+ 338 01F0 0E 04	        pop lr
+ 339 01F2 06 04	        pop r6
+ 340 01F4 0F B7	        mov pc, lr
+ 341           	
+ 342           	inport_read:
+ 343 01F6 01 68		mov	r1, #INPORT_ADDRESS & 0xFF
+ 344 01F8 F1 7F		movt	r1, #(INPORT_ADDRESS >> 8) & 0xFF
+ 345 01FA 10 08		ldrb	r0, [r1, #0]
+ 346 01FC 0F B7		mov	pc, lr
+ 347           	
+ 348           	outport_write:
+ 349 01FE 01 6C		mov	r1, #OUTPORT_ADDRESS & 0xFF
+ 350 0200 F1 7F		movt	r1, #(OUTPORT_ADDRESS >> 8) & 0xFF
+ 351 0202 10 28		strb	r0, [r1, #0]
+ 352 0204 0F B7		mov	pc, lr
+ 353           	
+ 354           	.data
+ 355           	    sides_table:
+ 356          	        .byte 4, 6, 8, 12
+ 356 0206 04 06 08 0C
+ 357           	
+ 358           	    display_codes:
+ 359          	        .byte 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x77, 0x7C, 0x39
+ 359 020A 06 5B 4F 66 6D 7D 07 7F 6F 77 7C 39
+ 360           	
+ 361           	    seed:
+ 362 0216 01 00	        .word 1
+ 363 0218 00 00	        .word 0
+ 364           	    sum:
+ 365 021A 00	        .byte 0
+ 366           	
+ 367          	.equ    STACK_SIZE, 64
+ 368          	.equ    INPORT_ADDRESS, 0xFF80
+ 369          	.equ    OUTPORT_ADDRESS, 0xFFC0
+ 370          	.equ	RAND_MAX_L, 0xFFFF		; Corresponde ao maior valor inteiro
+ 371          	.equ	RAND_MAX_H, 0xFFFF
+ 372          	.equ    nCs_ExT1, 0xff40
+ 373          	.equ    nCS_EN1, 0xFF40
+ 374           	
+ 375           	.stack
+ 376 021C 00   	    .space  STACK_SIZE
+ 376 .... ..
+ 376 025B 00
+ 377           	stack_top:
+ 377           	

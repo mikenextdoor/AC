@@ -1,0 +1,280 @@
+P16 assembler v1.5 (Feb  9 2024)	c:\Users\migue\Documents\Pessoal\ISEL\2º Semestre\AC\trabalho1.lst	Sat Mar 28 00:14:34 2026
+
+Sections
+Index   Name            Address   Size
+0       .text           0000      00FA 250
+1       .data           00FA      0046 70
+
+Symbols
+Name                    Type      Value       Section
+array_k1                LABEL     00FA 250    .data
+array_k2                LABEL     0110 272    .data
+array_k3                LABEL     0126 294    .data
+array_s1                LABEL     00FF 255    .data
+array_s2                LABEL     0115 277    .data
+array_s3                LABEL     012C 300    .data
+array_vals1             LABEL     0104 260    .data
+array_vals1_addr        LABEL     00F4 244    .text
+array_vals2             LABEL     011A 282    .data
+array_vals2_addr        LABEL     00F6 246    .text
+array_vals3             LABEL     0132 306    .data
+array_vals3_addr        LABEL     00F8 248    .text
+build_sequence          LABEL     00C4 196    .text
+clamp_return            LABEL     0064 100    .text
+clamp_value             LABEL     0054 84     .text
+else_if                 LABEL     005E 94     .text
+if_condition            LABEL     008E 142    .text
+if_end                  LABEL     00AC 172    .text
+scale_value             LABEL     0068 104    .text
+shift_loop              LABEL     009E 158    .text
+umull32                 LABEL     0000 0      .text
+umull32_else            LABEL     002A 42     .text
+umull32_loop            LABEL     0012 18     .text
+umull32_loop_end        LABEL     0034 52     .text
+umull32_ret             LABEL     0044 68     .text
+VAL_MIN                 ABSOLUTE  0005 5      .text
+while_end               LABEL     00EA 234    .text
+while_loop              LABEL     00DA 218    .text
+
+Code listing
+   1          	.equ	VAL_MIN, 5
+   2           	;CODIGO
+   3           	
+   4           	; umull
+   5           	;-----------Gerador de numeros aleatorios--------
+   6           	; Rotina:    umull32
+   7           	; Descricao: Realiza a multiplicacao de dois numeros naturais codificados com
+   8           	;            32 bits.
+   9           	;            Interface exemplo: uint32_t umull( uint32_t M, uint32_t m );
+  10           	; Entradas:  R1:R0 - Valor do multiplicando (M)
+  11           	;            R3:R2 - Valor do multiplicador (m)
+  12           	; Saidas:    R1:R0 - Valor do produto
+  13           	; Efeitos:   R5:R4 - Parte alta (bits 63..32) do produto (p), pois R3:R2 contem
+  14           	;                    a parte baixa (bits 31..0)
+  15           	;            R6    - Mapeia a variavel p_1
+  16           	;            R7    - guarda o valor da iteracao do ciclo for (i)
+  17           	;            R8    - guarda valores temporariamente
+  18           	;
+  19           	umull32:
+  20           	    ; Prologo
+  21 0000 08 24	    push    r8
+  22 0002 07 24	    push    r7
+  23 0004 06 24	    push    r6
+  24 0006 05 24	    push    r5
+  25 0008 04 24	    push    r4
+  26           	
+  27           	    ; Iniciar p fazendo a extensao de sinal aos 16 MSb
+  28 000A B4 F7	    asr    r4, r3, #15
+  29 000C 05 B2	    mov    r5, r4
+  30           	    ; Inicia p_1
+  31 000E 06 60	    mov    r6, #0
+  32           	    ; Implementacao do ciclo for
+  33 0010 07 60	    mov    r7, #0    ; Inicia i
+  34           	umull32_loop:
+  35 0012 08 62	    mov    r8, #32    ; Avaliar o limite maximo de i
+  36 0014 70 BC	    cmp    r7, r8
+  37 0016 16 48	    bhs    umull32_ret
+  38           	    ; Implementacao do if
+  39 0018 18 60	    mov    r8, #1
+  40 001A 28 C4	    and    r8, r2, r8
+  41 001C 06 44	    bzc    umull32_else
+  42 001E 18 60	    mov    r8, #1
+  43 0020 60 BC	    cmp    r6, r8
+  44 0022 08 44	    bne    umull32_loop_end
+  45 0024 44 80	    add    r4, r4, r0    ; Atualizar o valor de p
+  46 0026 D5 90	    adc    r5, r5, r1
+  47 0028 05 58	    b    umull32_loop_end
+  48           	umull32_else:
+  49           	    ; Implementacao otimizada do else
+  50 002A 08 60	    mov    r8, #0
+  51 002C 60 BC	    cmp    r6, r8
+  52 002E 02 44	    bne    umull32_loop_end
+  53 0030 44 88	    sub    r4, r4, r0    ; Atualizar o valor de p
+  54 0032 D5 98	    sbc    r5, r5, r1
+  55           	umull32_loop_end:
+  56 0034 18 60	    mov    r8, #1    ; Definir o novo valor de p_1
+  57 0036 26 C4	    and    r6, r2, r8
+  58 0038 D5 F0	    asr    r5, r5, #1
+  59 003A 44 D8	    rrx    r4, r4
+  60 003C 33 D8	    rrx    r3, r3
+  61 003E 22 D8	    rrx    r2, r2
+  62 0040 F7 A0	    add    r7, r7, #1    ; Incrementar i
+  63 0042 E7 5B	    b    umull32_loop
+  64           	
+  65           	umull32_ret:
+  66           	    ; Epilogo
+  67 0044 00 B1	    mov    r0, r2    ; Preparar o valor a devolver
+  68 0046 81 B1	    mov    r1, r3
+  69           	
+  70 0048 04 04	    pop    r4
+  71 004A 05 04	    pop    r5
+  72 004C 06 04	    pop    r6
+  73 004E 07 04	    pop    r7
+  74 0050 08 04	    pop    r8
+  75 0052 0F B7	    mov    pc, lr
+  76           	
+  77           	
+  78           	; r0 - val
+  79           	; r1 - min
+  80           	; r2 - max
+  81           	clamp_value:
+  82 0054 0E 24	    push    lr
+  83 0056 80 B8	    cmp     r0, r1
+  84 0058 02 48	    bhs     else_if
+  85 005A 80 B0	    mov     r0, r1
+  86 005C 03 58	    b       clamp_return
+  87           	    else_if:
+  88 005E 20 B8	    cmp     r2, r0
+  89 0060 01 48	    bhs     clamp_return
+  90 0062 00 B1	    mov     r0, r2
+  91           	    clamp_return:
+  92 0064 0E 04	    pop     lr
+  93 0066 0F B7	    mov     pc, lr
+  94           	
+  95           	; r0 - v
+  96           	; r1 - k
+  97           	; r2 - s
+  98           	; r3 - prod baixo
+  99           	; r4 - prod alto
+ 100           	; r5 - k_ext
+ 101           	; r6 - prod_s
+ 102           	; r7 - prod_c
+ 103           	scale_value:
+ 104 0068 0E 24	    push    lr
+ 105 006A 04 24	    push    r4
+ 106 006C 05 24	    push    r5
+ 107 006E 06 24	    push    r6
+ 108 0070 07 24	    push    r7
+ 109 0072 08 24	    push    r8
+ 110 0074 F8 6F	    mov     r8, #0xFF
+ 111 0076 15 C4	    and     r5, r1, r8
+ 112           	    
+ 113 0078 08 B1	    mov     r8, r2
+ 114 007A 01 60	    mov     r1, #0
+ 115 007C 82 B2	    mov     r2, r5
+ 116 007E 03 60	    mov     r3, #0
+ 117 0080 BF 5F	    bl      umull32
+ 118 0082 03 B0	    mov     r3, r0
+ 119 0084 84 B0	    mov     r4, r1
+ 120 0086 02 B4	    mov     r2, r8
+ 121           	
+ 122 0088 08 60	    mov     r8, #0
+ 123 008A 20 BC	    cmp     r2, r8
+ 124 008C 0F 40	    beq     if_end
+ 125           	if_condition:
+ 126 008E F8 6F	    mov     r8, #0xFF
+ 127 0090 22 C4	    and     r2, r2, r8
+ 128 0092 05 B1	    mov     r5, r2
+ 129 0094 A5 A8	    sub     r5, r2, #1
+ 130 0096 D5 E0	    lsl     r5, r5, #1
+ 131 0098 B3 82	    add     r3, r3, r5
+ 132 009A 08 60	    mov     r8, #0
+ 133 009C 44 94	    adc     r4, r4, r8
+ 134           	shift_loop:
+ 135 009E 08 60	    mov     r8, #0
+ 136 00A0 20 BC	    cmp     r2, r8
+ 137 00A2 04 40	    beq     if_end
+ 138 00A4 C4 E8	    lsr     r4, r4, #1
+ 139 00A6 33 D8	    rrx     r3, r3
+ 140 00A8 A2 A8	    sub     r2, r2, #1
+ 141 00AA F9 5B	    b       shift_loop
+ 142           	if_end:
+ 143 00AC F8 6F	    mov     r8, #0xFF
+ 144 00AE 36 C4	    and     r6, r3, r8
+ 145 00B0 00 B3	    mov     r0, r6
+ 146 00B2 51 60	    mov     r1, #VAL_MIN
+ 147 00B4 02 B3	    mov     r2, r6
+ 148 00B6 CE 5F	    bl      clamp_value
+ 149           	
+ 150 00B8 07 04	    pop     r7
+ 151 00BA 06 04	    pop     r6
+ 152 00BC 05 04	    pop     r5
+ 153 00BE 04 04	    pop     r4
+ 154 00C0 0E 04	    pop     lr
+ 155 00C2 0F B7	    mov     pc, lr
+ 156           	
+ 157           	; r0 - v_init
+ 158           	; r1 - v[]
+ 159           	; r2 - k[]
+ 160           	; r3 - s[]
+ 161           	build_sequence:
+ 162 00C4 0E 24	    push    lr
+ 163 00C6 04 24	    push    r4
+ 164 00C8 05 24	    push    r5
+ 165 00CA 04 60	    mov     r4, #0
+ 166 00CC 31 0D	    ldr     r1, array_vals1_addr
+ 167 00CE 32 0D	    ldr     r2, array_vals2_addr
+ 168 00D0 33 0D	    ldr     r3, array_vals3_addr
+ 169 00D2 10 28	    strb    r0, [r1, #0]
+ 170 00D4 35 1A	    ldrb    r5, [r3, r4]
+ 171 00D6 50 BA	    cmp     r5, r4
+ 172 00D8 08 40	    beq     while_end    
+ 173           	while_loop:
+ 174 00DA C5 A0	    add     r5, r4, #1
+ 175 00DC 10 1A	    ldrb    r0, [r1, r4]
+ 176 00DE 22 1A	    ldrb    r2, [r2, r4]
+ 177 00E0 33 1A	    ldrb    r3, [r3, r4]
+ 178 00E2 C2 5F	    bl      scale_value
+ 179 00E4 90 3A	    strb    r0, [r1, r5]
+ 180 00E6 C4 A0	    add     r4, r4, #1
+ 181 00E8 F8 5B	    b       while_loop
+ 182           	while_end:
+ 183 00EA 00 B2	    mov     r0, r4
+ 184 00EC 05 04	    pop     r5
+ 185 00EE 04 04	    pop     r4
+ 186 00F0 0E 04	    pop     lr
+ 187 00F2 0F B7	    mov     pc, lr
+ 188           	
+ 189           	array_vals1_addr:
+ 190 00F4 04 01	    .word array_vals1
+ 191           	
+ 192           	array_vals2_addr:
+ 193 00F6 1A 01	    .word array_vals2
+ 194           	    
+ 195           	array_vals3_addr:
+ 196 00F8 32 01	    .word array_vals3
+ 197           	
+ 198           	;DATA
+ 199           	.data
+ 200           	;1
+ 201           	    array_k1:
+ 202          	        .byte 205, 154, 102, 51, 0
+ 202 00FA CD 9A 66 33 00
+ 203           	
+ 204           	    array_s1:
+ 205          	        .byte 8, 8, 8, 8, 0
+ 205 00FF 08 08 08 08 00
+ 206           	
+ 207           	    array_vals1:
+ 208 0104 00   	        .space 12
+ 208 .... ..
+ 208 010F 00
+ 209           	
+ 210           	;2
+ 211           	    array_k2:
+ 212          	        .byte 35, 38, 42, 45, 0
+ 212 0110 23 26 2A 2D 00
+ 213           	
+ 214           	    array_s2:
+ 215          	        .byte 5, 5, 5, 5, 0
+ 215 0115 05 05 05 05 00
+ 216           	
+ 217           	    array_vals2:
+ 218 011A 00   	        .space 12
+ 218 .... ..
+ 218 0125 00
+ 219           	
+ 220           	;3
+ 221           	    array_k3:
+ 222          	        .byte 205, 154, 0, 45, 35, 0
+ 222 0126 CD 9A 00 2D 23 00
+ 223           	
+ 224           	    array_s3:
+ 225          	        .byte 8, 8, 0, 5, 5, 0
+ 225 012C 08 08 00 05 05 00
+ 226           	
+ 227           	    array_vals3:
+ 228 0132 00   	        .space 14
+ 228 .... ..
+ 228 013F 00
+ 228           	
